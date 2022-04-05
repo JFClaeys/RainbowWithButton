@@ -3,27 +3,23 @@
 #include <EasyButton.h>
 #include "RainbowDef.h"
 
-// uint8_t is the same as byte
-// uint16_t is unsigned int
-// I just noticed that I mixed these in this sketch, sorry
+#define NUM_LEDS 8     // Number of LEDs in the strip
+#define DATA_PIN 5     // WS2812 DATA_PIN.  Nano = old bootloader
+#define PUSH_BUTTON 7  // PIN used for controling the button. Connected to ground 
+#define LOOP_MS 5      // how long in ms  before iteration of colour
 
-#define NUM_LEDS 8 // Number of LEDs in the strip
-#define DATA_PIN 5 // WS2812 DATA_PIN.  Nano = old bootloader
-#define PUSH_BUTTON 7
-#define LOOP_MS 5
+#define CYCLE_PATTERN 0 // each led uses colour of precedent and a new colour is added on last led
+#define FIXED_PATTERN 1 // each led uses the new color apart 2nd and 6th, where red and green channels are fixed as 128, blue channel takes blue of new colour
+#define ARROW_PATTERN 2 // temptative
+#define MAX_PATTERN 3
 
-#define CYCLE_PATTERN 0
-#define FIXED_PATTERN 1
-#define ARROW_PATTERN 2
-#define MAX_PATTERN 3  // cycling, fixed
-
-#define LONG_PRESS_NEXT_PATTERN 1000
+#define LONG_PRESS_NEXT_PATTERN 1000  // 1 second long press will increment pattern pointer while not lit
 
 EasyButton button(PUSH_BUTTON);
 CRGB leds[NUM_LEDS]; // the array of leds to be shown
 CRGB backupLED[NUM_LEDS]; //the backup, as to where the current display is stored before clearing
 
-byte currentPattern = 0;    // 00 = cycling, 1 = fixed, 2 = ...who knows...
+byte currentPattern = 0;    // pattern pointer
 bool isLED_lit = true;      // have we requested leds to be visible or not? (i.e: pause mode)
 uint8_t iWait = 0;          // current cycle before next color cycle
 uint16_t AngleCycling = 0;  // current angle to use in the rainbow array 
@@ -125,8 +121,7 @@ void BackupCurrentPattern( bool doShow ) {
 
 void RestoresSavedPattern( bool doShow ) {
    //restore the state of the leds when we decided to close them
-  for (byte i=0;
-   i< NUM_LEDS; i++) {
+  for (byte i=0; i< NUM_LEDS; i++) {
     leds[i] = backupLED[i];
   }
   
