@@ -14,7 +14,8 @@
 
 #define CYCLE_PATTERN 0
 #define FIXED_PATTERN 1
-#define MAX_PATTERN 2  // cycling, fixed
+#define ARROW_PATTERN 2
+#define MAX_PATTERN 3  // cycling, fixed
 
 #define LONG_PRESS_NEXT_PATTERN 1000
 
@@ -53,6 +54,15 @@ void setRGBpoint(byte LED, uint8_t red, uint8_t green, uint8_t blue)
       leds[1] = leds[6];
       leds[0] = leds[7];
       break;
+    case ARROW_PATTERN :
+      leds[0] = leds[1];
+      leds[1] = leds[2];
+      leds[2] = leds[3];
+      leds[7] = leds[6];
+      leds[6] = leds[5];
+      leds[5] = leds[4];
+      leds[4] = CRGB(red, green, blue);
+      leds[3] = leds[4];
   }
   FastLED.show();
 }
