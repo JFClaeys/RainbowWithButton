@@ -1,6 +1,6 @@
 
 #include <FastLED.h>
-#include <EasyButton.h>
+#include <OneButton.h>
 #include "RainbowDef.h"
 
 #define NUM_LEDS 8     // Number of LEDs in the strip
@@ -11,14 +11,43 @@
 #define CYCLE_PATTERN 0 // each led uses colour of precedent and a new colour is added on last led
 #define FIXED_PATTERN 1 // each led uses the new color apart 2nd and 6th, where red and green channels are fixed as 128, blue channel takes blue of new colour
 #define ARROW_PATTERN 2 // temptative
-#define MAX_PATTERN 3
+#define MAX_PATTERN   3
 
 #define LONG_PRESS_NEXT_PATTERN 1000  // 1 second long press will increment pattern pointer while not lit
+#define CLICK_MS_DURATION 150
 
-EasyButton button(PUSH_BUTTON);
 CRGB leds[NUM_LEDS]; // the array of leds to be shown
 CRGB backupLED[NUM_LEDS]; //the backup, as to where the current display is stored before clearing
 
+//forward declarations
+void onPressedForNextPattern();
+void onSinglePressed();
+
+class Button{
+private:
+  OneButton button;
+public:
+  explicit Button(uint8_t pin):button(pin) {
+    button.setClickTicks(CLICK_MS_DURATION);
+    button.attachClick([](void *scope) { ((Button *) scope)->Clicked();}, this);
+    button.attachLongPressStart([](void *scope) { ((Button *) scope)->LongPressed();}, this);
+  }
+
+  void Clicked() {
+    onSinglePressed();
+  }
+
+  void LongPressed() {
+    onPressedForNextPattern();
+  }
+
+  void read() {
+    button.tick();
+  }
+};
+
+
+Button button(PUSH_BUTTON);
 byte currentPattern = 0;    // pattern pointer
 bool isLED_lit = true;      // have we requested leds to be visible or not? (i.e: pause mode)
 uint8_t iWait = 0;          // current cycle before next color cycle
@@ -88,7 +117,7 @@ void onPressedForNextPattern() {
    if (currentPattern == MAX_PATTERN) {
      currentPattern = 0;
    }   
-   AcknowledgeCommand(currentPattern ,currentPattern); // first led, in red;
+   AcknowledgeCommand(currentPattern ,currentPattern);
  }  
 }
 
@@ -137,8 +166,6 @@ void setup() {
   pinMode(LED_BUILTIN, OUTPUT);
   FastLED.addLeds<WS2812, DATA_PIN, GRB>(leds, NUM_LEDS);
   FastLED.setBrightness(50);
-  button.onPressedFor(LONG_PRESS_NEXT_PATTERN, onPressedForNextPattern);
-  button.onPressed(onSinglePressed);
 }
 
 /*******************************************************************/
