@@ -11,7 +11,8 @@
 #define CYCLE_PATTERN 0 // each led uses colour of precedent and a new colour is added on last led
 #define FIXED_PATTERN 1 // each led uses the new color apart 2nd and 6th, where red and green channels are fixed as 128, blue channel takes blue of new colour
 #define ARROW_PATTERN 2 // temptative
-#define MAX_PATTERN   3
+#define SCAN_PATTERN  3
+#define MAX_PATTERN   4
 
 #define LONG_PRESS_NEXT_PATTERN 1000  // 1 second long press will increment pattern pointer while not lit
 #define CLICK_MS_DURATION 150
@@ -22,6 +23,7 @@ CRGB backupLED[NUM_LEDS]; //the backup, as to where the current display is store
 //forward declarations
 void onPressedForNextPattern();
 void onSinglePressed();
+void onDoubleClick();
 
 class Button{
 private:
@@ -30,11 +32,16 @@ public:
   explicit Button(uint8_t pin):button(pin) {
     button.setClickTicks(CLICK_MS_DURATION);
     button.attachClick([](void *scope) { ((Button *) scope)->Clicked();}, this);
+    button.attachDoubleClick([](void *scope) { ((Button *) scope)->DoubleClicked();}, this);
     button.attachLongPressStart([](void *scope) { ((Button *) scope)->LongPressed();}, this);
   }
 
   void Clicked() {
     onSinglePressed();
+  }
+
+  void DoubleClicked() {
+    onDoubleClick();
   }
 
   void LongPressed() {
@@ -46,12 +53,13 @@ public:
   }
 };
 
-
 Button button(PUSH_BUTTON);
 byte currentPattern = 0;    // pattern pointer
 bool isLED_lit = true;      // have we requested leds to be visible or not? (i.e: pause mode)
 uint8_t iWait = 0;          // current cycle before next color cycle
 uint16_t AngleCycling = 0;  // current angle to use in the rainbow array 
+byte LedCycling = 0;
+bool directionForward = true;
 
 /*******************************************************************/
 
@@ -88,6 +96,19 @@ void setRGBpoint(byte LED, uint8_t red, uint8_t green, uint8_t blue)
       leds[5] = leds[4];
       leds[4] = CRGB(red, green, blue);
       leds[3] = leds[4];
+      break;
+  
+    case TEST_PATTERN :
+      leds[0] = CRGB::DarkRed;
+      leds[1] = CRGB::DarkRed;
+      leds[2] = CRGB::DarkRed;
+      leds[3] = CRGB::DarkRed;
+      leds[4] = CRGB::DarkRed;
+      leds[5] = CRGB::DarkRed;
+      leds[6] = CRGB::DarkRed;
+      leds[7] = CRGB::DarkRed;
+      leds[LED] = CRGB(red, green, blue);
+
   }
   FastLED.show();
 }
@@ -104,7 +125,7 @@ void sineLED(byte LED, int angle)
 /*******************************************************************/
 
 void AcknowledgeCommand( byte ledNumber, byte primaryColor ) {
-  leds[ledNumber] = CRGB(primaryColor==0 ? 255 : 0,   primaryColor==1 ? 255 : 0, primaryColor==2 ? 255 : 0 ); 
+  leds[ledNumber] = CRGB((primaryColor==0 || primaryColor==3) ? 255 : 0,   primaryColor==1 ? 255 : 0, primaryColor==2 ? 255 : 0); 
   FastLED.show();
   delay(250);
   leds[ledNumber] = CRGB(0, 0, 0 ); 
@@ -114,7 +135,7 @@ void AcknowledgeCommand( byte ledNumber, byte primaryColor ) {
 void onPressedForNextPattern() {
  if (!isLED_lit) {
    currentPattern++;
-   if (currentPattern == MAX_PATTERN) {
+   if (currentPattern >= MAX_PATTERN) {
      currentPattern = 0;
    }   
    AcknowledgeCommand(currentPattern ,currentPattern);
@@ -132,6 +153,13 @@ void onSinglePressed() {
   
   FastLED.show();      
   isLED_lit = !isLED_lit;
+}
+
+void onDoubleClick() {  // test to see double clicking behaviour
+  if (!isLED_lit) {
+    currentPattern = SCAN_PATTERN;
+    AcknowledgeCommand(currentPattern ,0);
+  }  
 }
 
 /*******************************************************************/
@@ -159,6 +187,43 @@ void RestoresSavedPattern( bool doShow ) {
   }  
 }
 
+void processLoopContent() {
+  if (iWait < LOOP_MS) {
+    delay(1);
+    iWait++;
+  } else {
+    iWait = 0;
+   
+    if ((AngleCycling % 5) == 0) {
+       sineLED(LedCycling, AngleCycling);
+    }
+
+    //going further on the cycle or resttting it
+    if (AngleCycling < CIRCLE_ANGLES) {
+      AngleCycling++;
+    } else {
+      AngleCycling = 0;
+
+      /*allow the whole color cycle before changing to next led*/
+      if (directionForward) {
+        LedCycling++;
+      } else {
+        LedCycling--;
+      }
+
+      if (LedCycling >= NUM_LEDS-1) {
+        directionForward = false; 
+        LedCycling = NUM_LEDS-1;
+      } else {
+        if (LedCycling <= 0) {
+          directionForward =  true;
+          LedCycling = 0;
+        }
+      }
+    }  
+  } 
+}
+
 /*******************************************************************/
 
 void setup() {
@@ -173,23 +238,7 @@ void setup() {
 void loop() {
   button.read();
 
-  if (iWait < LOOP_MS) {
-    delay(1);
-    iWait++;
-  } else {
-    iWait = 0;
-  
-    if (isLED_lit) {
-      if ((AngleCycling % 5) == 0) {
-        sineLED(0, AngleCycling);
-      }
-
-      //going further on the cycle or resttting it
-      if (AngleCycling < CIRCLE_ANGLES) {
-        AngleCycling++;
-      } else {
-       AngleCycling = 0;
-      }
-    }  
+  if (isLED_lit) {
+    processLoopContent();
   } 
 }  
