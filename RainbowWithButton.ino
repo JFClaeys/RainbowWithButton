@@ -157,7 +157,7 @@ void onSinglePressed() {
   isLED_lit = !isLED_lit;
 }
 
-void onDoubleClick() {
+void onDoubleClick() {  // test to see double clicking behaviour
   if (!isLED_lit) {
     currentPattern = SCAN_PATTERN;
     AcknowledgeCommand(currentPattern ,0);
