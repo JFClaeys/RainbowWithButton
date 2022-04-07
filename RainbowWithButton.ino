@@ -1,12 +1,14 @@
 
 #include <FastLED.h>
 #include <OneButton.h>
+#include <EEPROM.h>
 #include "RainbowDef.h"
 
 #define NUM_LEDS 8     // Number of LEDs in the strip
 #define DATA_PIN 5     // WS2812 DATA_PIN.  Nano = old bootloader
 #define PUSH_BUTTON 7  // PIN used for controling the button. Connected to ground 
 #define LOOP_MS 5      // how long in ms  before iteration of colour
+#define EEPROM_PATTERN_ADDRESS 0
 
 #define CYCLE_PATTERN 0 // each led uses colour of precedent and a new colour is added on last led
 #define FIXED_PATTERN 1 // each led uses the new color apart 2nd and 6th, where red and green channels are fixed as 128, blue channel takes blue of new colour
@@ -98,7 +100,7 @@ void setRGBpoint(byte LED, uint8_t red, uint8_t green, uint8_t blue)
       leds[3] = leds[4];
       break;
   
-    case TEST_PATTERN :
+    case SCAN_PATTERN :
       leds[0] = CRGB::DarkRed;
       leds[1] = CRGB::DarkRed;
       leds[2] = CRGB::DarkRed;
@@ -108,7 +110,6 @@ void setRGBpoint(byte LED, uint8_t red, uint8_t green, uint8_t blue)
       leds[6] = CRGB::DarkRed;
       leds[7] = CRGB::DarkRed;
       leds[LED] = CRGB(red, green, blue);
-
   }
   FastLED.show();
 }
@@ -148,14 +149,15 @@ void onSinglePressed() {
     digitalWrite(LED_BUILTIN, HIGH);  
   } else {
     RestoresSavedPattern(true) ;
-    digitalWrite(LED_BUILTIN, LOW);  
+    digitalWrite(LED_BUILTIN, LOW); 
+    EEPROM.update(EEPROM_PATTERN_ADDRESS, currentPattern); // will only write the memory if it differs.
   }
   
   FastLED.show();      
   isLED_lit = !isLED_lit;
 }
 
-void onDoubleClick() {  // test to see double clicking behaviour
+void onDoubleClick() {
   if (!isLED_lit) {
     currentPattern = SCAN_PATTERN;
     AcknowledgeCommand(currentPattern ,0);
@@ -231,6 +233,7 @@ void setup() {
   pinMode(LED_BUILTIN, OUTPUT);
   FastLED.addLeds<WS2812, DATA_PIN, GRB>(leds, NUM_LEDS);
   FastLED.setBrightness(50);
+  currentPattern = EEPROM.read(EEPROM_PATTERN_ADDRESS);
 }
 
 /*******************************************************************/
