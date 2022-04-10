@@ -7,7 +7,7 @@
 #define NUM_LEDS 8     // Number of LEDs in the strip
 #define DATA_PIN 5     // WS2812 DATA_PIN.  Nano = old bootloader
 #define PUSH_BUTTON 7  // PIN used for controling the button. Connected to ground 
-#define LOOP_MS 5      // how long in ms  before iteration of colour
+#define LOOP_MS 3      // how long in ms  before iteration of colour
 #define EEPROM_PATTERN_ADDRESS 0
 
 #define CYCLE_PATTERN 0 // each led uses colour of precedent and a new colour is added on last led
@@ -17,7 +17,7 @@
 #define MAX_PATTERN   4
 
 #define LONG_PRESS_NEXT_PATTERN 1000  // 1 second long press will increment pattern pointer while not lit
-#define CLICK_MS_DURATION 150
+#define CLICK_MS_DURATION 120
 
 CRGB leds[NUM_LEDS]; // the array of leds to be shown
 CRGB backupLED[NUM_LEDS]; //the backup, as to where the current display is stored before clearing
@@ -101,15 +101,13 @@ void setRGBpoint(byte LED, uint8_t red, uint8_t green, uint8_t blue)
       break;
   
     case SCAN_PATTERN :
-      leds[0] = CRGB::DarkRed;
-      leds[1] = CRGB::DarkRed;
-      leds[2] = CRGB::DarkRed;
-      leds[3] = CRGB::DarkRed;
-      leds[4] = CRGB::DarkRed;
-      leds[5] = CRGB::DarkRed;
-      leds[6] = CRGB::DarkRed;
-      leds[7] = CRGB::DarkRed;
+      for (byte i=0; i< NUM_LEDS; i++) {
+        leds[i] = CRGB::DarkRed;
+      }  
+        
       leds[LED] = CRGB(red, green, blue);
+      leds[LED + 1] = CRGB(red, green, blue);      
+      
   }
   FastLED.show();
 }
@@ -150,7 +148,7 @@ void onSinglePressed() {
   } else {
     RestoresSavedPattern(true) ;
     digitalWrite(LED_BUILTIN, LOW); 
-    EEPROM.update(EEPROM_PATTERN_ADDRESS, currentPattern); // will only write the memory if it differs.
+    //EEPROM.update(EEPROM_PATTERN_ADDRESS, currentPattern); // will only write the memory if it differs.
   }
   
   FastLED.show();      
@@ -213,9 +211,9 @@ void processLoopContent() {
         LedCycling--;
       }
 
-      if (LedCycling >= NUM_LEDS-1) {
+      if (LedCycling >= NUM_LEDS-2) {
         directionForward = false; 
-        LedCycling = NUM_LEDS-1;
+        LedCycling = NUM_LEDS-2;
       } else {
         if (LedCycling <= 0) {
           directionForward =  true;
