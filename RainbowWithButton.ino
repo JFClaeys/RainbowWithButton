@@ -106,8 +106,7 @@ void setRGBpoint(byte LED, uint8_t red, uint8_t green, uint8_t blue)
       }  
         
       leds[LED] = CRGB(red, green, blue);
-      leds[LED + 1] = CRGB(red, green, blue);      
-      
+      leds[LED + 1] = CRGB(red, green, blue);
   }
   FastLED.show();
 }
@@ -136,22 +135,22 @@ void onPressedForNextPattern() {
    currentPattern++;
    if (currentPattern >= MAX_PATTERN) {
      currentPattern = 0;
-   }   
+   }
    AcknowledgeCommand(currentPattern ,currentPattern);
- }  
+ }
 }
 
-void onSinglePressed() {  
+void onSinglePressed() {
   if (isLED_lit) {
     BackupCurrentPattern(false);
-    digitalWrite(LED_BUILTIN, HIGH);  
+    digitalWrite(LED_BUILTIN, HIGH);
   } else {
-    RestoresSavedPattern(true) ;
-    digitalWrite(LED_BUILTIN, LOW); 
+    RestoresSavedPattern(true);
+    digitalWrite(LED_BUILTIN, LOW);
     //EEPROM.update(EEPROM_PATTERN_ADDRESS, currentPattern); // will only write the memory if it differs.
   }
-  
-  FastLED.show();      
+
+  FastLED.show();
   isLED_lit = !isLED_lit;
 }
 
@@ -159,7 +158,7 @@ void onDoubleClick() {  // test to see double clicking behaviour
   if (!isLED_lit) {
     currentPattern = SCAN_PATTERN;
     AcknowledgeCommand(currentPattern ,0);
-  }  
+  }
 }
 
 /*******************************************************************/
@@ -168,12 +167,12 @@ void BackupCurrentPattern( bool doShow ) {
   //take a copy of the current LEDs, as we are going to clear it
   for (byte i=0; i< NUM_LEDS; i++) {
     backupLED[i] = leds[i];
-  }      
+  }
   FastLED.clear();
 
   if (doShow) {
     FastLED.show();
-  }  
+  }
 }
 
 void RestoresSavedPattern( bool doShow ) {
@@ -181,10 +180,10 @@ void RestoresSavedPattern( bool doShow ) {
   for (byte i=0; i< NUM_LEDS; i++) {
     leds[i] = backupLED[i];
   }
-  
+
   if (doShow) {
     FastLED.show();
-  }  
+  }
 }
 
 void processLoopContent() {
@@ -193,7 +192,7 @@ void processLoopContent() {
     iWait++;
   } else {
     iWait = 0;
-   
+
     if ((AngleCycling % 5) == 0) {
        sineLED(LedCycling, AngleCycling);
     }
@@ -204,23 +203,25 @@ void processLoopContent() {
     } else {
       AngleCycling = 0;
 
-      /*allow the whole color cycle before changing to next led*/
-      if (directionForward) {
-        LedCycling++;
-      } else {
-        LedCycling--;
-      }
+      if (currentPattern == SCAN_PATTERN) {
+        /*allow the whole color cycle before changing to next led*/
+        if (directionForward) {
+          LedCycling++;
+        } else {
+          LedCycling--;
+        }
 
-      if (LedCycling >= NUM_LEDS-2) {
-        directionForward = false; 
-        LedCycling = NUM_LEDS-2;
-      } else {
-        if (LedCycling <= 0) {
-          directionForward =  true;
-          LedCycling = 0;
+        if (LedCycling >= NUM_LEDS-2) {
+          directionForward = false;
+          LedCycling = NUM_LEDS-2;
+        } else {
+          if (LedCycling <= 0) {
+            directionForward =  true;
+            LedCycling = 0;
+          }
         }
       }
-    }  
+    }
   } 
 }
 
