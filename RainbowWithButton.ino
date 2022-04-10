@@ -70,13 +70,9 @@ void setRGBpoint(byte LED, uint8_t red, uint8_t green, uint8_t blue)
   //move colors along the array as to make them traveling the stick 
   switch (currentPattern) {
     case CYCLE_PATTERN :
-      leds[7] = leds[6];
-      leds[6] = leds[5];
-      leds[5] = leds[4];
-      leds[4] = leds[3];
-      leds[3] = leds[2];
-      leds[2] = leds[1];
-      leds[1] = leds[0];
+      for (byte i=NUM_LEDS-1; i>0; i--) {
+        leds[i] = leds[i-1];
+      }
       leds[0] = CRGB(red, green, blue);
       break; 
     case FIXED_PATTERN :
@@ -101,10 +97,9 @@ void setRGBpoint(byte LED, uint8_t red, uint8_t green, uint8_t blue)
       break;
   
     case SCAN_PATTERN :
-      for (byte i=0; i< NUM_LEDS; i++) {
+      for (byte i=0; i<NUM_LEDS; i++) {
         leds[i] = CRGB::DarkRed;
       }  
-        
       leds[LED] = CRGB(red, green, blue);
       leds[LED + 1] = CRGB(red, green, blue);
   }
@@ -122,8 +117,10 @@ void sineLED(byte LED, int angle)
 
 /*******************************************************************/
 
-void AcknowledgeCommand( byte ledNumber, byte primaryColor ) {
-  leds[ledNumber] = CRGB((primaryColor==0 || primaryColor==3) ? 255 : 0,   primaryColor==1 ? 255 : 0, primaryColor==2 ? 255 : 0); 
+void AcknowledgeCommand( byte ledNumber ) {
+const CRGB followup[5] = {CRGB::Red, CRGB::Orange, CRGB::Green, CRGB::Aqua, CRGB::Purple}; 
+
+  leds[ledNumber] = followup[ledNumber]; 
   FastLED.show();
   delay(250);
   leds[ledNumber] = CRGB(0, 0, 0 ); 
@@ -136,7 +133,7 @@ void onPressedForNextPattern() {
    if (currentPattern >= MAX_PATTERN) {
      currentPattern = 0;
    }
-   AcknowledgeCommand(currentPattern ,currentPattern);
+   AcknowledgeCommand(currentPattern);
  }
 }
 
@@ -157,7 +154,7 @@ void onSinglePressed() {
 void onDoubleClick() {  // test to see double clicking behaviour
   if (!isLED_lit) {
     currentPattern = SCAN_PATTERN;
-    AcknowledgeCommand(currentPattern ,0);
+    AcknowledgeCommand(currentPattern);
   }
 }
 
@@ -232,7 +229,7 @@ void setup() {
   pinMode(LED_BUILTIN, OUTPUT);
   FastLED.addLeds<WS2812, DATA_PIN, GRB>(leds, NUM_LEDS);
   FastLED.setBrightness(50);
-  currentPattern = EEPROM.read(EEPROM_PATTERN_ADDRESS);
+  //currentPattern = EEPROM.read(EEPROM_PATTERN_ADDRESS);
 }
 
 /*******************************************************************/
