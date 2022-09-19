@@ -2,6 +2,7 @@
 #include <FastLED.h>
 #include <OneButton.h>
 #include <EEPROM.h>
+#include <alphas.h>
 #include "RainbowDef.h"
 
 #define NUM_LEDS 8     // Number of LEDs in the strip
@@ -14,7 +15,8 @@
 #define FIXED_PATTERN 1 // each led uses the new color apart 2nd and 6th, where red and green channels are fixed as 128, blue channel takes blue of new colour
 #define ARROW_PATTERN 2 // temptative
 #define SCAN_PATTERN  3
-#define MAX_PATTERN   4
+#define ALPHA_PATTERN 4
+#define MAX_PATTERN   5
 
 #define LONG_PRESS_NEXT_PATTERN 1000  // 1 second long press will increment pattern pointer while not lit
 #define CLICK_MS_DURATION 120
@@ -102,6 +104,11 @@ void setRGBpoint(byte LED, uint8_t red, uint8_t green, uint8_t blue)
       }  
       leds[LED] = CRGB(red, green, blue);
       leds[LED + 1] = CRGB(red, green, blue);
+      break;
+      
+    case ALPHA_PATTERN :
+      
+      break;
   }
   FastLED.show();
 }
