@@ -3,7 +3,7 @@
 #include <OneButton.h>
 #include <EEPROM.h>
 #include <alphas.h>
-#include "RainbowDef.h"
+#include <RainbowDef.h>
 
 #define NUM_LEDS 8     // Number of LEDs in the strip
 #define DATA_PIN 5     // WS2812 DATA_PIN.  Nano = old bootloader
