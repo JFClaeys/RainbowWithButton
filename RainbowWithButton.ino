@@ -5,7 +5,7 @@
 #include <alphas.h>
 #include <RainbowDef.h>
 
-#define NUM_LEDS 8     // Number of LEDs in the strip
+#define NUM_LEDS 60     // Number of LEDs in the strip
 #define DATA_PIN 5     // WS2812 DATA_PIN.  Nano = old bootloader
 #define PUSH_BUTTON 7  // PIN used for controling the button. Connected to ground 
 #define LOOP_MS 3      // how long in ms  before iteration of colour
@@ -58,7 +58,8 @@ public:
 };
 
 Button button(PUSH_BUTTON);
-byte currentPattern = 0;    // pattern pointer
+byte currentPattern = CYCLE_PATTERN;    // pattern pointer
+
 bool isLED_lit = true;      // have we requested leds to be visible or not? (i.e: pause mode)
 uint8_t iWait = 0;          // current cycle before next color cycle
 uint16_t AngleCycling = 0;  // current angle to use in the rainbow array 
@@ -107,7 +108,10 @@ void setRGBpoint(byte LED, uint8_t red, uint8_t green, uint8_t blue)
       break;
       
     case ALPHA_PATTERN :
-      
+      for (byte i=0; i<NUM_LEDS; i++) {
+        leds[i] = CRGB(0,0,20);
+      }
+      leds[LED] = CRGB(0, 50, 20);
       break;
   }
   FastLED.show();
@@ -207,23 +211,25 @@ void processLoopContent() {
     } else {
       AngleCycling = 0;
 
-      if (currentPattern == SCAN_PATTERN) {
-        /*allow the whole color cycle before changing to next led*/
-        if (directionForward) {
-          LedCycling++;
-        } else {
-          LedCycling--;
-        }
-
-        if (LedCycling >= NUM_LEDS-2) {
-          directionForward = false;
-          LedCycling = NUM_LEDS-2;
-        } else {
-          if (LedCycling <= 0) {
-            directionForward =  true;
-            LedCycling = 0;
+      switch (currentPattern) {
+        case SCAN_PATTERN: 
+        case ALPHA_PATTERN:
+          /*allow the whole color cycle before changing to next led*/
+          if (directionForward) {
+            LedCycling++;
+          } else {
+            LedCycling--;
           }
-        }
+
+          if (LedCycling >= NUM_LEDS-2) {
+            directionForward = false;
+            LedCycling = NUM_LEDS-2;
+          } else {
+            if (LedCycling <= 0) {
+              directionForward =  true;
+              LedCycling = 0;
+            }
+          }
       }
     }
   } 
