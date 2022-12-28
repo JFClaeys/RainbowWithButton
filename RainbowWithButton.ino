@@ -199,41 +199,42 @@ void processLoopContent() {
   if (iWait < LedWaitLoop[currentPattern]) {
     delay(1);
     iWait++;
+    return;
+  }
+  
+  iWait = 0;
+
+  if ((AngleCycling % 5) == 0) {
+     sineLED(LedCycling, AngleCycling);
+  }
+
+  //going further on the cycle or resttting it
+  if (AngleCycling < CIRCLE_ANGLES) {
+    AngleCycling++;
   } else {
-    iWait = 0;
+    AngleCycling = 0;
 
-    if ((AngleCycling % 5) == 0) {
-       sineLED(LedCycling, AngleCycling);
-    }
+    switch (currentPattern) {
+      case SCAN_PATTERN: 
+      case ALPHA_PATTERN:
+        /*allow the whole color cycle before changing to next led*/
+        if (directionForward) {
+          LedCounter[currentPattern]++;
+        } else {
+          LedCounter[currentPattern]--;
+        }
 
-    //going further on the cycle or resttting it
-    if (AngleCycling < CIRCLE_ANGLES) {
-      AngleCycling++;
-    } else {
-      AngleCycling = 0;
-
-      switch (currentPattern) {
-        case SCAN_PATTERN: 
-        case ALPHA_PATTERN:
-          /*allow the whole color cycle before changing to next led*/
-          if (directionForward) {
-            LedCounter[currentPattern]++;
-          } else {
-            LedCounter[currentPattern]--;
+        if (LedCounter[currentPattern] >= NUM_LEDS-2) {
+          directionForward = false;
+          LedCounter[currentPattern] = NUM_LEDS-2;
+        } else {
+          if (LedCounter[currentPattern] <= 0) {
+            directionForward =  true;
+            LedCounter[currentPattern] = 0;
           }
-
-          if (LedCounter[currentPattern] >= NUM_LEDS-2) {
-            directionForward = false;
-            LedCounter[currentPattern] = NUM_LEDS-2;
-          } else {
-            if (LedCounter[currentPattern] <= 0) {
-              directionForward =  true;
-              LedCounter[currentPattern] = 0;
-            }
-          }
-      }
+        }
     }
-  } 
+  }
 }
 
 /*******************************************************************/
