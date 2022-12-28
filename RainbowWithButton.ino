@@ -141,6 +141,25 @@ CRGB Wheel(byte WheelPos) {
   }
 }
 
+uint8_t getNextIteration( uint16_t currentID, uint8_t aMin, uint8_t aMax, bool& forward) {
+  if (forward) {
+   currentID++;
+  } else {
+   currentID--;
+  }
+
+  if (currentID >= aMax) {
+    forward = false;
+    currentID = aMax;
+  } else {
+    if (currentID <= aMin) {
+      forward =  true;
+      currentID = aMin;
+    }
+  }
+  return currentID;
+}
+
 /*******************************************************************/
 
 void AcknowledgeCommand( byte ledNumber ) {
@@ -230,21 +249,7 @@ void processLoopContent() {
       case SCAN_PATTERN: 
       case ALPHA_PATTERN:
         /*allow the whole color cycle before changing to next led*/
-        if (directionForward) {
-          LedCounter[currentPattern]++;
-        } else {
-          LedCounter[currentPattern]--;
-        }
-
-        if (LedCounter[currentPattern] >= NUM_LEDS-2) {
-          directionForward = false;
-          LedCounter[currentPattern] = NUM_LEDS-2;
-        } else {
-          if (LedCounter[currentPattern] <= 0) {
-            directionForward =  true;
-            LedCounter[currentPattern] = 0;
-          }
-        }
+        LedCounter[currentPattern] = getNextIteration(LedCounter[currentPattern], 0,  NUM_LEDS-2, directionForward);
     }
   }
 }
