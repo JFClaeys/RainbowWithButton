@@ -16,7 +16,8 @@
 #define ARROW_PATTERN 2 // temptative
 #define SCAN_PATTERN  3
 #define ALPHA_PATTERN 4
-#define MAX_PATTERN   5
+#define FULL_PATTERN  5
+#define MAX_PATTERN   6
 
 #define LONG_PRESS_NEXT_PATTERN 1000  // 1 second long press will increment pattern pointer while not lit
 #define CLICK_MS_DURATION 120
@@ -160,6 +161,23 @@ uint8_t getNextIteration( uint16_t currentID, uint8_t aMin, uint8_t aMax, bool& 
   return currentID;
 }
 
+void rainbow() {
+  uint16_t i;
+  byte max_color = 250;
+  byte min_color = 100;
+
+  for(i = 0;  i < FastLED.size(); i++) {
+   leds[i] =  Wheel((i*1+LedCounter[currentPattern]) & 255);
+  }
+
+  LedCounter[currentPattern] = getNextIteration(LedCounter[currentPattern], min_color, max_color, directionForward);
+  FastLED.show();
+}
+
+void fullcolor_rainbow() {
+  FastLED.showColor( Wheel((1+LedCounter[currentPattern]) & 255));
+  LedCounter[currentPattern] = getNextIteration(LedCounter[currentPattern], 0, 255, directionForward);
+}
 /*******************************************************************/
 
 void AcknowledgeCommand( byte ledNumber ) {
@@ -235,23 +253,35 @@ void processLoopContent() {
   
   iWait = 0;
 
-  if ((AngleCycling % 5) == 0) {
-     sineLED(LedCycling, AngleCycling);
-  }
+  switch (currentPattern) {
+    case CYCLE_PATTERN :
+    case FIXED_PATTERN :
+    case ARROW_PATTERN :
+      if ((AngleCycling % 5) == 0) {
+        sineLED(LedCounter[currentPattern], AngleCycling);
+      }
 
-  //going further on the cycle or resttting it
-  if (AngleCycling < CIRCLE_ANGLES) {
-    AngleCycling++;
-  } else {
-    AngleCycling = 0;
+      //going further on the cycle or resttting it
+      if (AngleCycling < CIRCLE_ANGLES) {
+       AngleCycling++;
+       break;
+      } 
 
-    switch (currentPattern) {
-      case SCAN_PATTERN: 
-      case ALPHA_PATTERN:
-        /*allow the whole color cycle before changing to next led*/
-        LedCounter[currentPattern] = getNextIteration(LedCounter[currentPattern], 0,  NUM_LEDS-2, directionForward);
-    }
-  }
+      AngleCycling = 0;
+      break;
+
+    case SCAN_PATTERN: 
+      /*allow the whole color cycle before changing to next led*/
+      LedCounter[currentPattern] = getNextIteration(LedCounter[currentPattern], 0,  NUM_LEDS-2, directionForward);
+      break;
+    case ALPHA_PATTERN:
+      rainbow();
+      break;
+
+    case FULL_PATTERN:
+      fullcolor_rainbow();
+      break;
+    }  
 }
 
 /*******************************************************************/
@@ -264,6 +294,7 @@ void setup() {
   memset(LedCounter, 0, sizeof(LedCounter));
   memset(LedWaitLoop, LOOP_MS, sizeof(LedWaitLoop));
   LedWaitLoop[ALPHA_PATTERN] = LOOP_MS * 10;
+  LedWaitLoop[FULL_PATTERN] = LOOP_MS * 10;
   //currentPattern = EEPROM.read(EEPROM_PATTERN_ADDRESS);
 }
 
