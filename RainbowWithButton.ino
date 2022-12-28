@@ -63,7 +63,8 @@ byte currentPattern = CYCLE_PATTERN;    // pattern pointer
 bool isLED_lit = true;      // have we requested leds to be visible or not? (i.e: pause mode)
 uint8_t iWait = 0;          // current cycle before next color cycle
 uint16_t AngleCycling = 0;  // current angle to use in the rainbow array 
-byte LedCycling = 0;
+uint16_t LedCounter[MAX_PATTERN];
+uint8_t LedWaitLoop[MAX_PATTERN];
 bool directionForward = true;
 
 /*******************************************************************/
@@ -195,7 +196,7 @@ void RestoresSavedPattern( bool doShow ) {
 }
 
 void processLoopContent() {
-  if (iWait < LOOP_MS) {
+  if (iWait < LedWaitLoop[currentPattern]) {
     delay(1);
     iWait++;
   } else {
@@ -216,18 +217,18 @@ void processLoopContent() {
         case ALPHA_PATTERN:
           /*allow the whole color cycle before changing to next led*/
           if (directionForward) {
-            LedCycling++;
+            LedCounter[currentPattern]++;
           } else {
-            LedCycling--;
+            LedCounter[currentPattern]--;
           }
 
-          if (LedCycling >= NUM_LEDS-2) {
+          if (LedCounter[currentPattern] >= NUM_LEDS-2) {
             directionForward = false;
-            LedCycling = NUM_LEDS-2;
+            LedCounter[currentPattern] = NUM_LEDS-2;
           } else {
-            if (LedCycling <= 0) {
+            if (LedCounter[currentPattern] <= 0) {
               directionForward =  true;
-              LedCycling = 0;
+              LedCounter[currentPattern] = 0;
             }
           }
       }
@@ -242,6 +243,9 @@ void setup() {
   pinMode(LED_BUILTIN, OUTPUT);
   FastLED.addLeds<WS2812, DATA_PIN, GRB>(leds, NUM_LEDS);
   FastLED.setBrightness(50);
+  memset(LedCounter, 0, sizeof(LedCounter));
+  memset(LedWaitLoop, LOOP_MS, sizeof(LedWaitLoop));
+  LedWaitLoop[ALPHA_PATTERN] = LOOP_MS * 10;
   //currentPattern = EEPROM.read(EEPROM_PATTERN_ADDRESS);
 }
 
