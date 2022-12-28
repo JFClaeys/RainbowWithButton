@@ -127,12 +127,24 @@ void sineLED(byte LED, int angle)
   setRGBpoint(LED, red, green, blue ); 
 }
 
+CRGB Wheel(byte WheelPos) {
+  if(WheelPos < 85) {
+    return CRGB(WheelPos * 3, 255 - WheelPos * 3, 0);
+  } 
+  else if(WheelPos < 170) {
+    WheelPos -= 85;
+    return CRGB(255 - WheelPos * 3, 0, WheelPos * 3);
+  } 
+  else {
+    WheelPos -= 170;
+    return CRGB(0, WheelPos * 3, 255 - WheelPos * 3);
+  }
+}
+
 /*******************************************************************/
 
 void AcknowledgeCommand( byte ledNumber ) {
-const CRGB followup[5] = {CRGB::Red, CRGB::Orange, CRGB::Green, CRGB::Aqua, CRGB::Purple}; 
-
-  leds[ledNumber] = followup[ledNumber]; 
+  leds[ledNumber] = Wheel((255 / MAX_PATTERN) * ledNumber);
   FastLED.show();
   delay(250);
   leds[ledNumber] = CRGB(0, 0, 0 ); 
