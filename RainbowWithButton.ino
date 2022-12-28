@@ -105,6 +105,7 @@ void setRGBpoint(byte LED, uint8_t red, uint8_t green, uint8_t blue)
       for (byte i=0; i<NUM_LEDS; i++) {
         leds[i] = CRGB::DarkRed;
       }  
+
       leds[LED] = CRGB(red, green, blue);
       leds[LED + 1] = CRGB(red, green, blue);
       break;
@@ -257,6 +258,7 @@ void processLoopContent() {
     case CYCLE_PATTERN :
     case FIXED_PATTERN :
     case ARROW_PATTERN :
+    case SCAN_PATTERN  :
       if ((AngleCycling % 5) == 0) {
         sineLED(LedCounter[currentPattern], AngleCycling);
       }
@@ -268,12 +270,11 @@ void processLoopContent() {
       } 
 
       AngleCycling = 0;
+      if (currentPattern == SCAN_PATTERN) {
+        LedCounter[currentPattern] = getNextIteration(LedCounter[currentPattern], 0,  NUM_LEDS-2, directionForward);        
+      }
       break;
 
-    case SCAN_PATTERN: 
-      /*allow the whole color cycle before changing to next led*/
-      LedCounter[currentPattern] = getNextIteration(LedCounter[currentPattern], 0,  NUM_LEDS-2, directionForward);
-      break;
     case ALPHA_PATTERN:
       rainbow();
       break;
@@ -293,6 +294,7 @@ void setup() {
   FastLED.setBrightness(50);
   memset(LedCounter, 0, sizeof(LedCounter));
   memset(LedWaitLoop, LOOP_MS, sizeof(LedWaitLoop));
+  LedWaitLoop[SCAN_PATTERN] = 1;
   LedWaitLoop[ALPHA_PATTERN] = LOOP_MS * 10;
   LedWaitLoop[FULL_PATTERN] = LOOP_MS * 10;
   //currentPattern = EEPROM.read(EEPROM_PATTERN_ADDRESS);
