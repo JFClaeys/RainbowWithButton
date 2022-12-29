@@ -5,7 +5,7 @@
 #include <alphas.h>
 #include <RainbowDef.h>
 
-#define NUM_LEDS 60     // Number of LEDs in the strip
+#define NUM_LEDS 144     // Number of LEDs in the strip
 #define DATA_PIN 5     // WS2812 DATA_PIN.  Nano = old bootloader
 #define PUSH_BUTTON 7  // PIN used for controling the button. Connected to ground 
 #define LOOP_MS 3      // how long in ms  before iteration of colour
@@ -17,7 +17,8 @@
 #define SCAN_PATTERN  3
 #define ALPHA_PATTERN 4
 #define FULL_PATTERN  5
-#define MAX_PATTERN   6
+#define SWEEP_PATTERN 6
+#define MAX_PATTERN   7
 
 #define LONG_PRESS_NEXT_PATTERN 1000  // 1 second long press will increment pattern pointer while not lit
 #define CLICK_MS_DURATION 120
@@ -64,6 +65,7 @@ byte currentPattern = CYCLE_PATTERN;    // pattern pointer
 bool isLED_lit = true;      // have we requested leds to be visible or not? (i.e: pause mode)
 uint8_t iWait = 0;          // current cycle before next color cycle
 uint16_t AngleCycling = 0;  // current angle to use in the rainbow array 
+uint8_t gHue = 0;           // from DemoReel100
 uint16_t LedCounter[MAX_PATTERN];
 uint8_t LedWaitLoop[MAX_PATTERN];
 bool directionForward = true;
@@ -168,7 +170,7 @@ void rainbow() {
   byte min_color = 100;
 
   for(i = 0;  i < FastLED.size(); i++) {
-   leds[i] =  Wheel((i*1+LedCounter[currentPattern]) & 255);
+    leds[i] =  Wheel((i * 1 + LedCounter[currentPattern]) & 255);
   }
 
   LedCounter[currentPattern] = getNextIteration(LedCounter[currentPattern], min_color, max_color, directionForward);
@@ -179,6 +181,16 @@ void fullcolor_rainbow() {
   FastLED.showColor( Wheel((1+LedCounter[currentPattern]) & 255));
   LedCounter[currentPattern] = getNextIteration(LedCounter[currentPattern], 0, 255, directionForward);
 }
+
+void sinelon()
+{
+  // a colored dot sweeping back and forth, with fading trails
+  fadeToBlackBy( leds, NUM_LEDS, 20);
+  int pos = beatsin16( 13, 0, NUM_LEDS-1 );
+  leds[pos] += CHSV( gHue, 255, 192);
+  FastLED.show();
+}
+
 /*******************************************************************/
 
 void AcknowledgeCommand( byte ledNumber ) {
@@ -282,7 +294,11 @@ void processLoopContent() {
     case FULL_PATTERN:
       fullcolor_rainbow();
       break;
-    }  
+
+    case SWEEP_PATTERN:
+      sinelon();
+      break;
+  }  
 }
 
 /*******************************************************************/
@@ -304,6 +320,7 @@ void setup() {
 
 void loop() {
   button.read();
+  EVERY_N_MILLISECONDS( 20 ) { gHue++; } // slowly cycle the "base color" through the rainbow
 
   if (isLED_lit) {
     processLoopContent();
