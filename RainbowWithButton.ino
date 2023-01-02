@@ -5,7 +5,7 @@
 #include <alphas.h>
 #include <RainbowDef.h>
 
-#define NUM_LEDS 144     // Number of LEDs in the strip
+#define NUM_LEDS 144   // Number of LEDs in the strip
 #define DATA_PIN 5     // WS2812 DATA_PIN.  Nano = old bootloader
 #define PUSH_BUTTON 7  // PIN used for controling the button. Connected to ground 
 #define LOOP_MS 3      // how long in ms  before iteration of colour
@@ -18,10 +18,12 @@
 #define ALPHA_PATTERN 4
 #define FULL_PATTERN  5
 #define SWEEP_PATTERN 6
-#define MAX_PATTERN   7
+#define LETTERS_PATTERN 7
+#define MAX_PATTERN   8
 
 #define LONG_PRESS_NEXT_PATTERN 1000  // 1 second long press will increment pattern pointer while not lit
 #define CLICK_MS_DURATION 120
+#define HASBITSET(x, i) ((x & bit(i)) == bit(i))
 
 CRGB leds[NUM_LEDS]; // the array of leds to be shown
 CRGB backupLED[NUM_LEDS]; //the backup, as to where the current display is stored before clearing
@@ -60,7 +62,7 @@ public:
 };
 
 Button button(PUSH_BUTTON);
-byte currentPattern = CYCLE_PATTERN;    // pattern pointer
+byte currentPattern = LETTERS_PATTERN;    // pattern pointer
 
 bool isLED_lit = true;      // have we requested leds to be visible or not? (i.e: pause mode)
 uint8_t iWait = 0;          // current cycle before next color cycle
@@ -69,7 +71,7 @@ uint8_t gHue = 0;           // from DemoReel100
 uint16_t LedCounter[MAX_PATTERN];
 uint8_t LedWaitLoop[MAX_PATTERN];
 bool directionForward = true;
-
+uint8_t letterControl =0;
 /*******************************************************************/
 
 void setRGBpoint(byte LED, uint8_t red, uint8_t green, uint8_t blue)
@@ -186,9 +188,50 @@ void sinelon()
 {
   // a colored dot sweeping back and forth, with fading trails
   fadeToBlackBy( leds, NUM_LEDS, 20);
-  int pos = beatsin16( 13, 0, NUM_LEDS-1 );
+
+  int pos = beatsin16( 13, 0, NUM_LEDS-2 );
   leds[pos] += CHSV( gHue, 255, 192);
   FastLED.show();
+  gHue++;
+  //LedCounter[currentPattern] = getNextIteration(LedCounter[currentPattern], 0,  NUM_LEDS-2, directionForward);   
+}
+
+void HappyNewYear() {
+const LettersToIndex sequence[] = {letter_SPACE, /*letter_SPACE, letter_SPACE, */
+                                   letter_H, letter_A, letter_P, letter_P, letter_Y, letter_SPACE, 
+                                   letter_N, letter_E, letter_W, letter_SPACE,
+                                   letter_Y, letter_E, letter_A, letter_R, letter_SPACE, 
+                                   letter_exclam, letter_exclam, letter_exclam};
+  
+
+  byte v = pgm_read_byte( &alphas[sequence[LedCounter[currentPattern]]].drawing[letterControl]);
+  switch (v) {
+    case 0 : 
+      FastLED.showColor( CRGB::Black);
+      break;
+          
+    case 0xFF :
+      FastLED.showColor( CRGB::Blue);
+      break;
+
+    default:
+      for (byte i=0; i < 8; i++) {
+        leds[i] = (bitRead(v, i) ? CRGB::Blue : CRGB::Black);
+      }
+      FastLED.show();  
+      break;    
+  }
+  
+  letterControl++;
+  if (letterControl > NUM_LINES_CHAR-1) {
+    LedCounter[currentPattern]++;
+    if (LedCounter[currentPattern] >= NUM_OF(sequence)) {
+      LedCounter[currentPattern] = 0;
+    }
+    // if ()
+    letterControl = 0;
+    //FastLED.showColor( CRGB::Red);   //this is to verify the shape of each letter by adding a red bar between
+  }
 }
 
 /*******************************************************************/
@@ -258,6 +301,8 @@ void RestoresSavedPattern( bool doShow ) {
 }
 
 void processLoopContent() {
+ // EVERY_N_MILLISECONDS( 10 ) { gHue++; } // slowly cycle the "base color" through the rainbow
+  
   if (iWait < LedWaitLoop[currentPattern]) {
     delay(1);
     iWait++;
@@ -298,6 +343,10 @@ void processLoopContent() {
     case SWEEP_PATTERN:
       sinelon();
       break;
+
+    case LETTERS_PATTERN:
+      HappyNewYear();
+      break;
   }  
 }
 
@@ -313,6 +362,7 @@ void setup() {
   LedWaitLoop[SCAN_PATTERN] = 1;
   LedWaitLoop[ALPHA_PATTERN] = LOOP_MS * 10;
   LedWaitLoop[FULL_PATTERN] = LOOP_MS * 10;
+  LedWaitLoop[LETTERS_PATTERN] = 200;
   //currentPattern = EEPROM.read(EEPROM_PATTERN_ADDRESS);
 }
 
@@ -320,7 +370,6 @@ void setup() {
 
 void loop() {
   button.read();
-  EVERY_N_MILLISECONDS( 20 ) { gHue++; } // slowly cycle the "base color" through the rainbow
 
   if (isLED_lit) {
     processLoopContent();
